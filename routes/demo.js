@@ -10,10 +10,10 @@ var qs = require('querystring');
 let driverStr='mongodb://localhost:27017/elecmapcheckin';
 let cn='elecmapcheckin';//collectionName;
 
-router.get('/', function(req, res, next) {
-    //res.send('1');
-    //req.end();
-});
+//router.get('/', function(req, res, next) {
+//    //res.send('1');
+//    //req.end();
+//});
 
 /**
  *execResult 0成功
@@ -22,28 +22,32 @@ router.get('/', function(req, res, next) {
  *
  */
 router.post('/reg', function(req, res, next) {
-    //console.log(req.body+" "+req.body.useid);
+    //console.log(req.body+" "+req.body);
+    //console.log(req.body+" "+req.body.userid);
     var userId=req.body.userid;
     if (userId==undefined) {
         var errRet={};
         errRet.err="0";
         errRet.execResult="2";
+        console.log(1);
         res.send(JSON.stringify(errRet));
         res.end();
-        db.close();
+        //db.close();
         return;
     }
     Mongo.connect(driverStr, function(err, db) {
         if (err) {
+            console.log(2);
             console.log(err);
             db.close();
             return;
         }
         var co = require('co');
         co(function*() {
-            //console.log("11");
+            console.log(3);
             var r=yield db.collection(cn).count({"userid":userId});
             if(r!=0){
+                console.log(4);
                 var errRet={};
                 errRet.err="0";
                 errRet.execResult="1";
@@ -53,6 +57,7 @@ router.post('/reg', function(req, res, next) {
                 db.close();
                 return;
             }
+            console.log(5);
             //执行一条插入
             var r1= yield db.collection(cn).insertOne({"userid":userId})
             var errRet={};
@@ -83,7 +88,7 @@ router.post('/xy', function(req, res, next) {
         errRet.execResult="2";
         res.send(JSON.stringify(errRet));
         res.end();
-        db.close();
+        //db.close();
         return;
     }
     Mongo.connect(driverStr, function(err, db) {
@@ -157,7 +162,7 @@ router.post('/checkin', function(req, res, next) {
         errRet.execResult="2";
         res.send(JSON.stringify(errRet));
         res.end();
-        db.close();
+        //db.close();
         return;
     }
     Mongo.connect(driverStr, function(err, db){
