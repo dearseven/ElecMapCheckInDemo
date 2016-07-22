@@ -134,9 +134,115 @@ router.post('/xy', function(req, res, next) {
     })
 });
 
-
+/**
+ *execResult 0 ok
+ *execResult 1 用户id不存在
+ *execResult 2 失败
+ *
+ *ckinResult 0 打卡成功
+ *ckinResult 1 今日已打卡
+ *
+ *isLate     0 未迟到
+ *isLate     1 吃到
+ *
+ *today      yyyy-mm-dd
+ *
+ *time       hh:mm
+ */
 router.post('/checkin', function(req, res, next) {
-    res.send('1');
+    var userId=req.body.userid;
+    if (userId==undefined) {
+        var errRet={};
+        errRet.err="0";
+        errRet.execResult="2";
+        res.send(JSON.stringify(errRet));
+        res.end();
+        db.close();
+        return;
+    }
+    Mongo.connect(driverStr, function(err, db){
+        if (err) {
+            console.log(err);
+            return;
+        }
+        var co = require('co');
+        co(function* () {   
+            var r=yield db.collection(cn).count({"userid":userId});
+            if(r==0){//用户不存在
+                var errRet={};
+                errRet.err="0";
+                errRet.execResult="1";
+                res.send(JSON.stringify(errRet));
+                res.end();
+                db.close();
+                return;
+            }
+            //目前只打一次卡 so 就这样
+            r=yield db.collection(cn).findOne({"type":"in","index":1});
+            var hour=r.hour;
+            var minute=r.minute;
+            //获取用户当日的打卡记录
+            var today=new Date();
+            var todayYear=today.getFullYear();
+            var todayMonth=today.getMonth()+1;
+            if (todayMonth<10) {
+               todayMonth="0"+todayMonth;
+            }
+            var todayDay=today.getDate();
+            if (todayDay<10) {
+               todayDay="0"+todayDay;
+            }
+            var ckDay=todayYear+"-"+todayMonth+"-"+todayDay;
+            console.log(ckDay);
+            r=yield db.collection(cn).count({"userid":userId,"today":ckDay});
+            if (r==0) {//今天还未打卡
+                var isLate=0;
+                var nowHour=today.getHours();
+                var nowMin=today.getMinutes();
+                if (hour<nowHour) {
+                    isLate=1;
+                }else if (hour>nowHour) {
+                    //
+                }else if (hour==nowHour) {
+                    if (minute<nowMin) {
+                        isLate=1;
+                    }else if (minute>nowMin) {
+                        //
+                    }else if (minute==nowMin) {
+                        //
+                    }                    
+                }
+                console.log(isLate+" "+ckDay);
+                var _time=(nowHour<10?"0"+nowHour:nowHour)+":"+(nowMin<10?"0"+nowMin:nowMin);
+                r=yield db.collection(cn).insertOne({"userid":userId+"","today":ckDay,"isLate":isLate+"","time":_time});
+                var retJson={};
+                retJson.userid=(userId+"");
+                retJson.today=ckDay;
+                retJson.time=_time;
+                retJson.ckinResult="0";
+                retJson.execResult="0";
+                retJson.isLate=isLate;
+                res.send(JSON.stringify(retJson));
+                res.end();
+                db.close();               
+                return;
+            }//直接返回今天的打卡记录
+            r=yield db.collection(cn).findOne({"userid":userId,"today":ckDay});
+            var retJson={};
+            retJson.userid=(r.userid+"");
+            retJson.today=r.today;
+            retJson.time=r.time;
+            retJson.ckinResult="1";
+            retJson.execResult="0";
+            retJson.isLate=isLate;
+            res.send(JSON.stringify(retJson));
+            res.end();
+            db.close();   
+        }).catch(function(err) {
+            db.close();
+            console.log(err.stack);
+        });
+    });
 });
 
 module.exports = router;

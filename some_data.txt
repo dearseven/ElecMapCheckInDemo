@@ -1,0 +1,8 @@
+//打开时间
+db.elecmapcheckin.insertOne({"type":"in","index":1,"hour":9,"minute":0});
+db.elecmapcheckin.insertOne({"type":"out","index":2,"hour":12,"minute":0});
+db.elecmapcheckin.insertOne({"type":"in","index":3,"hour":13,"minute":30});
+db.elecmapcheckin.insertOne({"type":"out","index":4,"hour":18,"minute":0});
+
+//分公司
+db.elecmapcheckin.insertOne({"companyid":"c1","longitude":"113.01482152504387","latitude":"28.182413883319086"});
